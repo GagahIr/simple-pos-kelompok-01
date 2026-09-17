@@ -5,19 +5,25 @@
     <h1 class="text-lg font-semibold mb-4">Transaksi Kasir</h1>
     <div x-data="{
         cart: [],
-        addToCart(id, name, price) {
-            this.cart.push({ id, name, price });
+        lastAddedId: null, // <-- Tambahan state baru
+            addToCart(id, name, price) {
+                this.cart.push({ id, name, price });
+                this.lastAddedId = id; // <-- Set ID produk yang diklik
         },
         subtotal() {
             return this.cart.reduce((sum, item) => sum + item.price, 0);
         },
         removeFromCart(id) {
-            this.cart = this.cart.filter(item => item.id !== id);
+                this.cart = this.cart.filter(item => item.id !== id);
+                if (this.lastAddedId === id) {
+                    this.lastAddedId = null; // <-- Reset highlight jika item dihapus
+                }
         }
     }">
         <div class="grid grid-cols-3 gap-4">
             @foreach ($products as $product)
-                <div class="border rounded-md p-3 cursor-pointer flex justify-between"
+                <div class="border rounded-md p-3 cursor-pointer flex justify-between transition-all duration-150"
+                    :class="lastAddedId === {{ $product->id }} ? 'ring-2 ring-blue-500 border-transparent' : ''"
                     @click="addToCart({{ $product->id }}, '{{ $product->name }}', {{ $product->price }})">
                     <div>
                         <div class="flex items-center gap-2">
