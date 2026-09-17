@@ -6,6 +6,6 @@
 </head>
 <body>
     <x-nav />
-    <main>@yield('content')</main>
+    <main class="mx-5">@yield('content')</main>
 </body>
 </html>
