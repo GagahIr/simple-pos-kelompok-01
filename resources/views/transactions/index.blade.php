@@ -12,10 +12,12 @@
                 &middot; {{ $transaction->created_at->format('d M Y H:i') }}
                 &middot; Rp {{ number_format($transaction->total) }}
                 &middot; Kasir: {{ $transaction->user->name }}
+                &middot; Jumlah Item: {{ $transaction->details->sum('qty') }}
             </p>
             <ul class="text-sm text-slate-500 mt-1">
                 @foreach ($transaction->details as $detail)
-                    <li>{{ $detail->product->name }} &times; {{ $detail->qty }} = Rp {{ number_format($detail->subtotal) }}</li>
+                    <li>{{ $detail->product->name }} &times; {{ $detail->qty }} = Rp {{ number_format($detail->subtotal) }}
+                    </li>
                 @endforeach
             </ul>
         </div>
