@@ -57,3 +57,15 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## JOBSHEET 6 -  Tantangan Mandiri
+### Pertanyaan:
+Jika field total tetap dikirim dari form dan divalidasi dengan aturan numeric, apakah itu cukup mencegah manipulasi total? Kenapa atau kenapa tidak? Jelaskan
+
+### Jawaban:
+Tidak, mengirim field total dari form dan hanya memvalidasinya dengan aturan numeric belum cukup untuk mencegah manipulasi total transaksi.
+
+Validasi numeric hanya memastikan bahwa nilai yang dikirim berupa angka. Namun, pengguna masih dapat mengubah nilai tersebut sebelum dikirim ke server. Oleh karena itu, total transaksi tidak seharusnya dipercaya dari input pengguna. Server harus menghitung ulang total berdasarkan data yang tersimpan di database, yaitu harga produk dan jumlah barang (qty). Dengan cara tersebut, meskipun pengguna mencoba mengubah nilai total yang dikirim dari form, nilai yang digunakan oleh sistem tetap berasal dari perhitungan server. Hal ini membuat manipulasi total menjadi lebih sulit karena pengguna tidak dapat menentukan sendiri nilai akhir transaksi.
+
+Kesimpulannya, validasi numeric hanya memeriksa tipe input, bukan kebenaran nilai total. Untuk mencegah manipulasi, total harus dihitung dan ditentukan kembali oleh server berdasarkan data yang dipercaya dari database. 
