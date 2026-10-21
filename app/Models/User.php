@@ -50,6 +50,11 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
