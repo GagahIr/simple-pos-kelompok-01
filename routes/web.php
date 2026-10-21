@@ -26,8 +26,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/pos', [TransactionController::class, 'store'])
         ->name('transactions.store');
 
-    Route::get('/transactions', [TransactionController::class, 'index'])
-        ->name('transactions.index');
+    Route::middleware('role:admin,manager,kasir')->group(function () {
+        Route::get('/transactions', [TransactionController::class, 'index'])
+            ->name('transactions.index');
+    });
 
     Route::middleware('role:admin')->group(function () {
         Route::resource('categories', CategoryController::class)
