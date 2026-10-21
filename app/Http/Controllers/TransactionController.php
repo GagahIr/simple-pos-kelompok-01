@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Http\Requests\StoreTransactionRequest;
+
 class TransactionController extends Controller
 {
     public function create()
@@ -12,7 +14,7 @@ class TransactionController extends Controller
         return view('pos.create', ['products' => $products]);
     }
 
-    public function store()
+    public function store(StoreTransactionRequest $request)
     {
         return 'Transaksi disimpan (belum ada logika penyimpanan)';
     }
