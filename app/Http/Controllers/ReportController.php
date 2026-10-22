@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Exports\SalesReportExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
 
 class ReportController extends Controller
 {
@@ -59,5 +61,23 @@ class ReportController extends Controller
     private function filteredQuery($from, $to): Builder
     {
         return Transaction::with('user')->whereBetween('created_at', [$from, $to]);
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        [$from, $to] = $this->resolveDateRange($request);
+
+        $pdf = Pdf::loadView('reports.pdf', [
+            'totalPenjualan' => $this->filteredQuery($from, $to)->sum('total'),
+            'jumlahTransaksi' => $this->filteredQuery($from, $to)->count(),
+            'transactions' => $this->filteredQuery($from, $to)
+                ->latest()
+                ->limit(50)
+                ->get(),
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+        ]);
+
+        return $pdf->download('laporan-penjualan.pdf');
     }
 }

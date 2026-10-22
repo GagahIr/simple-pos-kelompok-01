@@ -18,6 +18,8 @@
             class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm">Export CSV</a>
         <a href="{{ route('reports.export.excel', ['from' => $from, 'to' => $to]) }}"
             class="bg-green-600 text-white px-4 py-2 rounded-md text-sm">Export Excel</a>
+        <a href="{{ route('reports.export.pdf', ['from' => $from, 'to' => $to]) }}"
+            class="bg-red-600 text-white px-4 py-2 rounded-md text-sm">Export PDF</a>
     </form>
     <div class="bg-white border rounded-md p-4 max-w-sm">
         <p class="text-sm text-slate-500">Total Penjualan</p>
