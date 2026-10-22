@@ -34,6 +34,12 @@
         <p class="mt-6 text-xs text-slate-500">
             Akun demo: admin@pos.test atau kasir@pos.test, kata sandi <code>password</code>.
         </p>
+
+        <div class="mt-4 pt-4 border-t border-slate-200 text-center">
+            <a href="{{ route('info') }}" class="text-xs text-slate-500 hover:text-slate-800 underline">
+                Tentang & Informasi Aplikasi
+            </a>
+        </div>
     </div>
 </body>
 </html>
