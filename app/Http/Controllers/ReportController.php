@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SalesReportExport;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -21,20 +22,22 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         [$from, $to] = $this->resolveDateRange($request);
-        $query = $this->filteredQuery($from, $to);
+        $query = $this->filteredQuery($request, $from, $to);
 
         return view('reports.index', [
             'totalPenjualan' => $query->sum('total'),
             'jumlahTransaksi' => $query->count(),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'categories' => Category::all(),
+            'category_id' => $request->category_id,
         ]);
     }
 
     public function exportCsv(Request $request): StreamedResponse
     {
         [$from, $to] = $this->resolveDateRange($request);
-        $query = $this->filteredQuery($from, $to);
+        $query = $this->filteredQuery($request, $from, $to);
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
@@ -51,7 +54,7 @@ class ReportController extends Controller
         [$from, $to] = $this->resolveDateRange($request);
 
         return Excel::download(
-            new SalesReportExport($this->filteredQuery($from, $to)),
+            new SalesReportExport($this->filteredQuery($request, $from, $to)),
             'laporan-penjualan.xlsx',
         );
     }
@@ -59,13 +62,15 @@ class ReportController extends Controller
     public function exportPdf(Request $request): Response
     {
         [$from, $to] = $this->resolveDateRange($request);
+        $query = $this->filteredQuery($request, $from, $to);
 
         $pdf = Pdf::loadView('reports.pdf', [
-            'totalPenjualan' => $this->filteredQuery($from, $to)->sum('total'),
-            'jumlahTransaksi' => $this->filteredQuery($from, $to)->count(),
-            'transactions' => $this->filteredQuery($from, $to)->latest()->limit(50)->get(),
+            'totalPenjualan' => $query->sum('total'),
+            'jumlahTransaksi' => $query->count(),
+            'transactions' => $query->latest()->limit(50)->get(),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'category_id' => $request->category_id,
         ]);
 
         return $pdf->download('laporan-penjualan.pdf');
@@ -125,27 +130,17 @@ class ReportController extends Controller
         return [$from, $to];
     }
 
-    private function filteredQuery($from, $to): Builder
+    private function filteredQuery(Request $request, $from, $to): Builder
     {
-        return Transaction::with('user')
+        $query = Transaction::with('user')
             ->whereBetween('created_at', [$from, $to]);
-    }
 
-    public function exportPdf(Request $request): Response
-    {
-        [$from, $to] = $this->resolveDateRange($request);
+        if ($request->filled('category_id')) {
+            $query->whereHas('details.product', function ($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
 
-        $pdf = Pdf::loadView('reports.pdf', [
-            'totalPenjualan' => $this->filteredQuery($from, $to)->sum('total'),
-            'jumlahTransaksi' => $this->filteredQuery($from, $to)->count(),
-            'transactions' => $this->filteredQuery($from, $to)
-                ->latest()
-                ->limit(50)
-                ->get(),
-            'from' => $from->toDateString(),
-            'to' => $to->toDateString(),
-        ]);
-
-        return $pdf->download('laporan-penjualan.pdf');
+        return $query;
     }
 }
