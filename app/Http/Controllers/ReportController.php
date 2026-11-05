@@ -2,35 +2,45 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Exports\SalesReportExport;
+use App\Jobs\ProcessProductImport;
+use App\Models\Category;
+use App\Models\ImportError;
+use App\Models\Transaction;
+use App\Models\TransactionDetail;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
     public function index(Request $request): View
     {
         [$from, $to] = $this->resolveDateRange($request);
-        $query = $this->filteredQuery($from, $to);
+        $query = $this->filteredQuery($request,$from, $to);
+        
         return view('reports.index', [
             'totalPenjualan' => $query->sum('total'),
             'jumlahTransaksi' => $query->count(),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'categories' => Category::all(),
+            'category_id' => $request->category_id,
         ]);
     }
 
     public function exportCsv(Request $request): StreamedResponse
     {
         [$from, $to] = $this->resolveDateRange($request);
-        $query = $this->filteredQuery($from, $to);
+        $query = $this->filteredQuery($request, $from, $to);
+
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['ID', 'Tanggal', 'Kasir', 'Total']);
@@ -46,38 +56,91 @@ class ReportController extends Controller
         [$from, $to] = $this->resolveDateRange($request);
 
         return Excel::download(
-            new SalesReportExport($this->filteredQuery($from, $to)),
-            'laporan-penjualan.xlsx'
+            new SalesReportExport($this->filteredQuery($request, $from, $to)),
+            'laporan-penjualan.xlsx',
         );
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        [$from, $to] = $this->resolveDateRange($request);
+        $query = $this->filteredQuery($request, $from, $to);
+        $topProducts = $this->topProductsQuery($request, $from, $to)->limit(10)->get();
+
+        $pdf = Pdf::loadView('reports.pdf', [
+            'totalPenjualan' => $query->sum('total'),
+            'jumlahTransaksi' => $query->count(),
+            'transactions' => $query->latest()->limit(50)->get(),
+            'topProducts' => $topProducts,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'category_id' => $request->category_id,
+        ]);
+
+        return $pdf->download('laporan-penjualan.pdf');
+    }
+
+    public function importForm(): View
+    {
+        return view('reports.import', [
+            'importErrors' => ImportError::orderBy('row')->get(),
+        ]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'csv' => ['required', 'file', 'mimes:csv,txt'],
+        ]);
+
+        $path = $request->file('csv')->store('imports');
+
+        ProcessProductImport::dispatch($path);
+
+        return back()->with('success', 'Import sedang diproses di background.');
     }
 
     private function resolveDateRange(Request $request): array
     {
         $from = $request->date('from')?->startOfDay() ?? now()->startOfMonth();
         $to = $request->date('to')?->endOfDay() ?? now()->endOfDay();
+
         return [$from, $to];
     }
 
-    private function filteredQuery($from, $to): Builder
+    private function filteredQuery(Request $request, $from, $to): Builder
     {
-        return Transaction::with('user')->whereBetween('created_at', [$from, $to]);
+        $query = Transaction::with('user')
+            ->whereBetween('created_at', [$from, $to]);
+
+        if ($request->filled('category_id')) {
+            $query->whereHas('details.product', function ($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+
+        return $query;
     }
 
-    public function exportPdf(Request $request): Response
+    private function topProductsQuery(Request $request, $from, $to): Builder
     {
-        [$from, $to] = $this->resolveDateRange($request);
-
-        $pdf = Pdf::loadView('reports.pdf', [
-            'totalPenjualan' => $this->filteredQuery($from, $to)->sum('total'),
-            'jumlahTransaksi' => $this->filteredQuery($from, $to)->count(),
-            'transactions' => $this->filteredQuery($from, $to)
-                ->latest()
-                ->limit(50)
-                ->get(),
-            'from' => $from->toDateString(),
-            'to' => $to->toDateString(),
-        ]);
-
-        return $pdf->download('laporan-penjualan.pdf');
+        return TransactionDetail::query()
+            ->join('transactions', 'transactions.id', '=', 'transaction_details.transaction_id')
+            ->join('products', 'products.id', '=', 'transaction_details.product_id')
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->whereBetween('transactions.created_at', [$from, $to])
+            ->when($request->filled('category_id'), function ($q) use ($request) {
+                $q->where('products.category_id', $request->category_id);
+            })
+            ->select(
+                'products.id',
+                'products.name',
+                'categories.name as category_name',
+                DB::raw('SUM(transaction_details.qty) as total_qty'),
+                DB::raw('SUM(transaction_details.subtotal) as total_revenue')
+            )
+            ->groupBy('products.id', 'products.name', 'categories.name')
+            ->orderByDesc('total_qty')
+            ->orderByDesc('total_revenue');
     }
 }

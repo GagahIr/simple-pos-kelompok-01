@@ -27,16 +27,9 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/pos', [TransactionController::class, 'create'])
-        ->name('pos.create');
-
-    Route::post('/pos', [TransactionController::class, 'store'])
-        ->name('transactions.store');
-
-    Route::middleware('role:admin,manager,kasir')->group(function () {
-        Route::get('/transactions', [TransactionController::class, 'index'])
-            ->name('transactions.index');
-    });
+    Route::get('/pos', [TransactionController::class, 'create'])->name('pos.create');
+    Route::post('/pos', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
     Route::middleware('role:admin')->group(function () {
         Route::resource('categories', CategoryController::class)->except('show');
@@ -44,6 +37,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
         Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('/reports/export/xlsx', [ReportController::class, 'exportExcel'])->name('reports.export.xlsx');
         Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+        Route::get('/import', [ReportController::class, 'importForm'])->name('import.create');
+        Route::post('/import', [ReportController::class, 'import'])->name('import.store');
     });
 });
