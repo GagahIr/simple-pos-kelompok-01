@@ -7,10 +7,12 @@
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
         h1 { font-size: 18px; margin-bottom: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        h2 { font-size: 14px; margin-top: 16px; margin-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 12px; }
         th, td { border: 1px solid #999; padding: 4px 8px; text-align: left; }
         th { background: #eee; }
         .right { text-align: right; }
+        .center { text-align: center; }
     </style>
 </head>
 <body>
@@ -18,7 +20,35 @@
     <p>Periode {{ $from }} s.d. {{ $to }}</p>
     <p>Total penjualan: <strong>Rp {{ number_format($totalPenjualan) }}</strong> dari {{ $jumlahTransaksi }} transaksi</p>
 
-    <p>50 transaksi terbaru pada periode ini:</p>
+    <h2>Produk Terlaris</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="center" style="width: 5%;">No</th>
+                <th>Nama Produk</th>
+                <th>Kategori</th>
+                <th class="right">Jumlah Terjual</th>
+                <th class="right">Total Penjualan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($topProducts as $index => $item)
+                <tr>
+                    <td class="center">{{ $index + 1 }}</td>
+                    <td>{{ $item->name }}</td>
+                    <td>{{ $item->category_name ?? '-' }}</td>
+                    <td class="right">{{ number_format($item->total_qty) }}</td>
+                    <td class="right">Rp {{ number_format($item->total_revenue) }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="center">Tidak ada data produk terjual pada periode ini</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <h2>50 Transaksi Terbaru</h2>
     <table>
         <thead>
             <tr>
@@ -29,14 +59,18 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($transactions as $t)
+            @forelse ($transactions as $t)
                 <tr>
                     <td>{{ $t->id }}</td>
                     <td>{{ $t->created_at->format('Y-m-d H:i') }}</td>
                     <td>{{ $t->user->name }}</td>
                     <td class="right">Rp {{ number_format($t->total) }}</td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="4" class="center">Tidak ada transaksi pada periode ini</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 </body>

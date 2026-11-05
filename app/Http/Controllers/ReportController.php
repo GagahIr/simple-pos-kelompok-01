@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Exports\SalesReportExport;
 use App\Jobs\ProcessProductImport;
+use App\Models\Category;
 use App\Models\ImportError;
 use App\Models\Transaction;
+use App\Models\TransactionDetail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -62,11 +65,13 @@ class ReportController extends Controller
     {
         [$from, $to] = $this->resolveDateRange($request);
         $query = $this->filteredQuery($request, $from, $to);
+        $topProducts = $this->topProductsQuery($request, $from, $to)->limit(10)->get();
 
         $pdf = Pdf::loadView('reports.pdf', [
             'totalPenjualan' => $query->sum('total'),
             'jumlahTransaksi' => $query->count(),
             'transactions' => $query->latest()->limit(50)->get(),
+            'topProducts' => $topProducts,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'category_id' => $request->category_id,
@@ -115,5 +120,27 @@ class ReportController extends Controller
         }
 
         return $query;
+    }
+
+    private function topProductsQuery(Request $request, $from, $to): Builder
+    {
+        return TransactionDetail::query()
+            ->join('transactions', 'transactions.id', '=', 'transaction_details.transaction_id')
+            ->join('products', 'products.id', '=', 'transaction_details.product_id')
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->whereBetween('transactions.created_at', [$from, $to])
+            ->when($request->filled('category_id'), function ($q) use ($request) {
+                $q->where('products.category_id', $request->category_id);
+            })
+            ->select(
+                'products.id',
+                'products.name',
+                'categories.name as category_name',
+                DB::raw('SUM(transaction_details.qty) as total_qty'),
+                DB::raw('SUM(transaction_details.subtotal) as total_revenue')
+            )
+            ->groupBy('products.id', 'products.name', 'categories.name')
+            ->orderByDesc('total_qty')
+            ->orderByDesc('total_revenue');
     }
 }
