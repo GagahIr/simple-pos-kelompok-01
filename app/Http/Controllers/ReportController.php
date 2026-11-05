@@ -130,4 +130,4 @@ class ReportController extends Controller
         return Transaction::with('user')
             ->whereBetween('created_at', [$from, $to]);
     }
-}
+}       

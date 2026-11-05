@@ -35,4 +35,4 @@ Route::middleware('auth')->group(function () {
         Route::get('/import', [ReportController::class, 'importForm'])->name('import.create');
         Route::post('/import', [ReportController::class, 'import'])->name('import.store');
     });
-});
+}); 
