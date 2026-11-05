@@ -21,7 +21,7 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         [$from, $to] = $this->resolveDateRange($request);
-        $query = $this->filteredQuery($from, $to);
+        $query = $this->filteredQuery($request,$from, $to);
         
         return view('reports.index', [
             'totalPenjualan' => $query->sum('total'),
