@@ -62,3 +62,7 @@ No	Langkah	Hasil yang diharapkan
 1	Di php artisan tinker: App\Models\User::where('email', 'kasir@pos.test')->update(['is_active' => false]);	Perintah berhasil
 2	Login dengan kasir@pos.test dan kata sandi benar	Ditolak dengan pesan "Akun dinonaktifkan. Hubungi admin."
 3	Aktifkan kembali dengan update(['is_active' => true]), lalu login lagi	Login berhasil
+
+
+Pertanyaan Jobsheet 9, Langkah 6: Untuk laporan 100.000 transaksi, format mana yang kalian pilih (CSV, Excel, atau PDF), dan kenapa?
+Untuk laporan dengan 100.000 transaksi, kelompok kami memilih format CSV karena lebih ringan dan mendukung pemrosesan data dalam jumlah besar menggunakan streaming. Data dapat ditulis secara bertahap tanpa harus memuat seluruh transaksi ke memori. Excel lebih cocok untuk laporan yang membutuhkan pengolahan dan format tabel, sedangkan PDF lebih sesuai untuk laporan ringkasan yang akan dibaca atau dicetak.
