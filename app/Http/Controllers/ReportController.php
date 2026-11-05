@@ -15,6 +15,7 @@ use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -117,6 +118,20 @@ class ReportController extends Controller
         return back()->with('success', "{$created} produk baru, {$updated} diperbarui.");
     }
 
+    public function importExcel(Request $request): RedirectResponse
+{
+    $request->validate([
+        'csv' => ['required', 'file', 'mimes:csv,txt'],
+    ]);
+
+    $import = new ProductsImport();
+    Excel::import($import, $request->file('csv'));
+
+    return back()->with(
+        'success',
+        "{$import->created} produk baru, {$import->updated} diperbarui, {$import->failures()->count()} baris dilewati."
+    );
+}
     private function resolveDateRange(Request $request): array
     {
         $from = $request->date('from')?->startOfDay() ?? now()->startOfMonth();

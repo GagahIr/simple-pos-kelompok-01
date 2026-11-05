@@ -24,3 +24,12 @@
         <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-md text-sm">Import</button>
     </form>
 @endsection
+
+<form method="POST" action="{{ route('import.excel') }}" enctype="multipart/form-data" class="max-w-md mt-8">
+    @csrf
+    <label class="block mb-3">
+        <span class="text-sm font-medium">File CSV (versi Laravel Excel)</span>
+        <input type="file" name="csv" accept=".csv" class="mt-1 block w-full text-sm">
+    </label>
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm">Import (Laravel Excel)</button>
+</form>
