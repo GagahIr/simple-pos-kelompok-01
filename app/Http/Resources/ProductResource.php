@@ -1,3 +1,4 @@
+
 <?php
 
 namespace App\Http\Resources;
@@ -14,6 +15,14 @@ class ProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'price' => $this->price,
+            'category' => $this->whenLoaded(
+                'category',
+                fn () => $this->category->name
+            ),
+        ];
     }
 }
