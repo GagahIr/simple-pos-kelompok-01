@@ -52,4 +52,11 @@ class TransactionController extends Controller
             ],
         ], 201);
     }
+
+    public function show(Transaction $transaction)
+    {
+        Gate::authorize('view', $transaction);
+
+        return new TransactionResource($transaction);
+    }
 }
