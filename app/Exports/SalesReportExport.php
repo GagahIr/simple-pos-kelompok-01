@@ -7,6 +7,7 @@ use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use App\Imports\ProductsImport;
 
 class SalesReportExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
